@@ -1,184 +1,159 @@
 #include "main.h"
 
-void crearPila(tPila * pp)
+void crearLista(tLista*pl)
 {
-    pp->tope = 0;
+    *pl=NULL;
 }
 
-int poner_en_pila(tPila *pp, const void * dato, size_t tam)
+int insertarOrdLista(tLista*pl, const void*dato, size_t tam, int (*cmp)(const void*, const void*))
 {
-    if(TOPE < pp->tope+ sizeof(size_t)+tam)
+    tNodo*nue;
+    int men;
+    while(*pl && (men= cmp(dato, (*pl)->dato))>0)
     {
-        return PILA_LLENA;
+        pl = &(*pl)->sig;
     }
-
-    memcpy(pp->vec+pp->tope, dato, tam);
-    pp->tope+=tam;
-
-    memcpy(pp->vec+pp->tope, &tam, sizeof(size_t));
-
-    pp->tope+=sizeof(size_t);
-
-    return TODO_OK;
-}
-
-int sacar_de_pila(tPila * pp, void * dato, size_t tam)
-{
-    size_t tam_dato;
-
-    if(pp->tope == 0)
-        return PILA_VACIA;
-    pp->tope-=sizeof(size_t);
-
-    memcpy(&tam_dato, pp->vec + pp->tope, sizeof(size_t));
-
-    pp->tope-=tam;
-
-    memcpy(dato, pp->vec+pp->tope, tam_dato> tam? tam: tam_dato);
-    return TODO_OK;
-}
-
-int ver_tope(const tPila * pp, void * dato, size_t tam)
-{
-    size_t tam_dato;
-    if(pp->tope == 0)
-        return 0; //pila vacia
-
-    memcpy(&tam_dato, pp->vec + pp->tope -sizeof(size_t), sizeof(size_t));
-
-    memcpy(dato, pp->vec+pp->tope-sizeof(size_t)-tam, tam_dato> tam? tam : tam_dato);
-    return TODO_OK;
-}
-
-int pila_vacia(tPila * pp)
-{
-    return pp->tope ==0? 1:0;
-}
-int proceso(const char *archivo, tPila *pp)
-{
-    int numero;
-    FILE *pf = fopen(archivo, "rb");
-
-    if(!pf)
+    nue = (tNodo*)malloc(sizeof(tNodo));
+    if(!nue)
         return 0;
-
-    while(fread(&numero, sizeof(numero), 1, pf) == 1)
+    nue->dato = malloc(tam);
+    if(!nue->dato)
     {
-        poner_en_pila(pp, &numero, sizeof(int));
-    }
-
-    fclose(pf);
-    return TODO_OK;
-}
-
-
-int grabar_archivo(const char *archivo, tPila *pp)
-{
-    FILE *pf = fopen(archivo, "wb");
-    int numero;
-
-    if(!pf)
+        free(nue);
         return 0;
-
-    while(!pila_vacia(pp))
-    {
-        sacar_de_pila(pp, &numero, sizeof(int));
-        fwrite(&numero, sizeof(numero), 1, pf);
     }
-
-    fclose(pf);
-
-    if(ftell(pf) == 0)
-        remove(archivo);
-
-    return TODO_OK;
+    nue->tamDato = tam;
+    memcpy(nue->dato, dato, tam);
+    nue->sig = *pl;
+    *pl = nue;
+    return 1;
 }
-
-void menu(const char * archivo, tPila *pp)
+int insertarIniLista(tLista*pl, const void*dato, size_t tam)
 {
-    int numero, idx;
-
-    do
+    tNodo*nue = (tNodo*)malloc(sizeof(tNodo));
+    if(!nue)
+        return 0;
+    nue->dato = malloc(tam);
+    if(!nue->dato)
     {
-        printf("\nMENU\n");
-        printf("1. Cargar numero en la pila\n");
-        printf("2. Ver tope\n");
-        printf("3. Sacar de la pila\n");
-        printf("4. Salir\n");
-        printf("Ingrese opcion: ");
-        scanf("%d", &idx);
+        free(nue);
+        return 0;
+    }
+    nue->tamDato = tam;
+    memcpy(nue->dato, dato, tam);
+    nue->sig = *pl;
+    *pl = nue;
+    return 1;
+}
+int sacar_de_listaIni(tLista*pl, void*dato, size_t tam)
+{
+    tNodo*elim = *pl;
+    if(!pl)
+        return 0;
+    memcpy(dato, elim->dato, MINIMO(tam, elim->tamDato));
+    *pl = elim->sig;
+    free(elim);
+    free(elim->dato);
+    return 1;
+}
+int sacar_de_lista(tLista*pl, const void*dato, int (*cmp)(const void*, const void*))
+{
+    tNodo*elim;
 
-        switch (idx)
+    while(*pl)
+    {
+        if(cmp((*pl)->dato, dato)==0)
         {
-        case 1:
-            printf("Ingrese un numero entero: ");
-            scanf("%d", &numero);
-            if(poner_en_pila(pp, &numero, sizeof(int)) == PILA_LLENA)
-                printf("Pila llena.\n");
-            break;
-
-        case 2:
-            if(ver_tope(pp, &numero, sizeof(int)) == 0)
-                printf("Pila vacia.\n");
-            else
-                printf("Tope: %d\n", numero);
-            break;
-
-        case 3:
-            if(sacar_de_pila(pp, &numero, sizeof(int)) == PILA_VACIA)
-                printf("Pila vacia.\n");
-            else
-                printf("Se saco: %d\n", numero);
-            break;
-
-        case 4:
-            grabar_archivo(archivo, pp); // guarda lo que queda en la pila
-            break;
-
-        default:
-            printf("Opcion invalida.\n");
+            elim = *pl;
+            *pl = elim->sig;
+            free(elim->dato);
+            free(elim);
+            return 1;
         }
-
+        pl = &(*pl)->sig;
     }
-    while(idx != 4);
+    return 0;
+}
+void vaciarLista(tLista*pl)
+{
+    tNodo * elim;
+    while(*pl)
+    {
+        elim = *pl;
+        *pl = elim->sig;
+        free(elim->dato);
+        free(elim);
+    }
 }
 
-void mostrarArchivoBin(const char* arch)
+int compararEnteros(const void*a, const void*b)
 {
-    int n;
-    FILE *pf = fopen(arch, "rb");
-    if(!pf)
-    {
-        printf("Error al abrir el archivo");
-        exit(1);
-    }
+    return (*(int*)a-*(int*)b);
+}
 
-    while(fread(&n, sizeof(n), 1, pf) == 1)
-    {
-        printf("%d\n", n);
-    }
+void topN(tLista*pl, void (*accion)(const void*, void*), int top,int (*cmp)(const void*, const void*))
+{
+    int TopN =0;
+    tNodo * men;
 
-    fclose(pf);
+    while(TopN< top)
+    {
+        men = buscarMenor(pl,cmp);
+        if(men)
+        {
+            accion(men->dato,NULL);
+            sacar_de_lista(pl, men->dato, cmp); //lo tengo q sacar d lista xq sino se me queda repetido para las otras busquedas
+            TopN++;
+        }
+    }
+}
+void topNSinDupli(tLista*pl, void (*accion)(const void*, void*), int top,int (*cmp)(const void*, const void*))
+{
+    int TopN =0;
+    tNodo * men;
+
+    while(*pl && TopN< top)
+    {
+        men = buscarMenor(pl,cmp);
+        if(men)
+        {
+            accion(men->dato,NULL);
+            sacar_de_lista(pl, men->dato, cmp); //lo tengo q sacar d lista xq sino se me queda repetido para las otras busquedas
+            TopN++;
+        }
+    }
+}
+
+tNodo* buscarMenor(tLista* pl, int (*cmp)(const void*, const void*))
+{
+    if (!pl || !*pl)
+        return NULL;
+
+    tNodo* menor = *pl; //pongo el primer ele como el menor
+
+    while(*pl)
+    {
+        if (cmp((*pl)->dato, menor->dato) < 0) {
+            menor = *pl;
+        }
+        pl = &(*pl)->sig;
+    }
+    return menor;
 }
 
 
-void crearArchBin(const char * arch)
+void imprimirEnteros(const void*dato, void* param)
 {
-    FILE* f = fopen(arch, "wb");
-    if(!f)
+    printf("%d ", *(int*)dato);
+}
+
+void insertarDatos(tLista*pl)
+{
+    int n=10;
+    int vec[10] = {8,9,1,2,6,2,4,8, 5, 7};
+
+    for(int i=0; i<n; i++)
     {
-        perror("No se pudo crear el archivo");
-        exit(1);
+        insertarIniLista(pl, &vec[i], sizeof(int));
     }
-
-    int numeros[] = {10, 20, 30};
-    int cantidad = sizeof(numeros) / sizeof(numeros[0]);
-
-    for(size_t i = 0; i < cantidad; i++)
-    {
-        fwrite(&numeros[i], sizeof(int), 1, f);
-    }
-
-    fclose(f);
-    printf("Archivo creado con %d enteros.\n", cantidad);
 }

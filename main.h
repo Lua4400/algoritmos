@@ -3,33 +3,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define TOPE 100
-#define PILA_LLENA 0
-#define TODO_OK 1
-#define PILA_VACIA 0
-#define ERROR 1
-#define archBinDatos "datos.bin"
+#define MINIMO(X,Y) ((X)>(Y)?(Y):(X))
 
-typedef struct
+typedef struct sNodo
 {
-    char vec[TOPE];
-    size_t tope;
-}tPila;
+    void*dato;
+    size_t tamDato;
+    struct sNodo*sig;
+}tNodo;
+
+typedef tNodo*tLista;
 
 
-//pila
+void crearLista(tLista*pl);
+int insertarOrdLista(tLista*pl, const void*dato, size_t tam, int (*cmp)(const void*, const void*));
+void vaciarLista(tLista*pl);
+int compararEnteros(const void*a, const void*b);
+int insertarIniLista(tLista*pl, const void*dato, size_t tam);
+int sacar_de_listaIni(tLista*pl, void*dato, size_t tam);
+int sacar_de_lista(tLista*pl, const void*dato, int (*cmp)(const void*, const void*));
 
-void crearPila(tPila * pp);
-int poner_en_pila(tPila *pp, const void * dato, size_t tam);
-int sacar_de_pila(tPila * pp, void * dato, size_t tam);
-int ver_tope(const tPila * pp, void * dato, size_t tam);
-int pila_vacia(tPila * pp);
 
-//ejercicio
-int proceso(const char *archivo, tPila *pp);
-int grabar_archivo(const char *archivo, tPila *pp);
-void menu(const char * archivo, tPila *pp);
 
-void mostrarArchivoBin(const char* arch);
-void crearArchBin(const char * arch);
+void topN(tLista*pl, void (*accion)(const void*, void*), int top,int (*cmp)(const void*, const void*));
+tNodo* buscarMenor(tLista* pl, int (*cmp)(const void*, const void*));
+void imprimirEnteros(const void*dato, void *param);
+void insertarDatos(tLista*pl);
 #endif // MAIN_H_INCLUDED
